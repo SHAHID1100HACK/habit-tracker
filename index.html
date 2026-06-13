@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HabitMentor | Turn Goals into Daily Actions</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container auth-container">
+        <header class="auth-header">
+            <h1>HabitMentor</h1>
+            <p>Your AI-powered pocket mentor.</p>
+        </header>
+
+        <div class="auth-card">
+            <div class="theme-toggle-wrapper">
+                <button id="themeToggleBtn" onclick="toggleTheme()" class="btn-secondary">🌓 Toggle Theme</button>
+            </div>
+
+            <h2 id="formTitle">Sign Up</h2>
+            
+            <form id="authForm">
+                <div class="input-group" id="usernameGroup">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="e.g. Shahid_Hunter" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required placeholder="you@example.com">
+                </div>
+                
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="Min. 8 characters">
+                </div>
+
+                <div id="authError" class="error-message hidden"></div>
+
+                <button type="submit" id="submitBtn" class="btn-primary">Create Account</button>
+            </form>
+
+            <p class="auth-switch">
+                <span id="switchText">Already have an account?</span> 
+                <a href="#" id="switchMode">Log In</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>

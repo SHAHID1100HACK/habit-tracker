@@ -1,0 +1,50 @@
+<!-- pages/chat.html -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Mentor Chat | HabitMentor</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container dashboard-container" style="display: flex; flex-direction: column; z-index: 100; min-height: calc(100vh - 20px);">
+        <!-- Header -->
+        <header class="dash-header">
+            <div>
+                <p class="date-text">AI Companion</p>
+                <h1>Pocket Mentor</h1>
+            </div>
+            <a href="settings.html" class="avatar-circle">⚙️</a>
+        </header>
+
+        <!-- Chat History Window -->
+        <div id="chatBox" class="chat-box-window" style="flex-grow: 1; overflow-y: auto; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; padding: 10px;">
+            <div class="chat-bubble assistant">
+                Hello! I am your AI Mentor. Tell me what your goals are, ask for motivation, or type <strong>"add: [task]"</strong> to instantly update your daily planner! 📌
+            </div>
+        </div>
+
+        <!-- Chat Input Form -->
+        <form id="chatForm" style="display: flex; gap: 10px; margin-bottom: 80px;">
+            <input type="text" id="chatInput" placeholder="Ask for motivation or type 'add: read 10 pages'..." required autocomplete="off" style="flex-grow: 1; background: var(--surface-2); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; color: var(--text-primary); outline: none;">
+            <button type="submit" id="sendMsgBtn" class="btn-primary" style="width: auto; margin-top: 0; padding: 0 24px;">Send</button>
+        </form>
+
+        <!-- Fixed Bottom Navigation -->
+        <nav class="bottom-nav">
+            <a href="dashboard.html" class="nav-item">🏠</a>
+            <a href="goals.html" class="nav-item">🎯</a>
+            <a href="dashboard.html" class="fab-button">+</a>
+            <a href="chat.html" class="nav-item active">💬</a>
+            <a href="achievements.html" class="nav-item">🏆</a>
+        </nav>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/ui.js"></script>
+    <script src="../js/ai.js"></script>
+</body>
+</html>

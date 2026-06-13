@@ -1,0 +1,123 @@
+<!-- pages/dashboard.html -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | HabitMentor</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container dashboard-container">
+        
+        <!-- Header -->
+        <header class="dash-header">
+            <div>
+                <!-- NEW DATE NAVIGATOR START -->
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+                    <button id="prevDateBtn" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 16px;">◀</button>
+                    <p id="currentDate" class="date-text" style="margin: 0; min-width: 140px; text-align: center; font-weight: bold;"></p>
+                    <button id="nextDateBtn" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 16px;">▶</button>
+                </div>
+                <!-- NEW DATE NAVIGATOR END -->
+                
+                <h1 id="greeting">Good day!</h1>
+            </div>
+            
+            <!-- Header Actions (Friends + Profile) -->
+            <div class="header-actions">
+                <button id="friendsBtn" class="icon-btn">👥</button>
+                <a href="settings.html" class="avatar-circle">
+                    <span id="userInitial">?</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Hero Progress Card -->
+        <div class="hero-card">
+            <div class="hero-info">
+                <h2>My Plan<br>For Today</h2>
+                <p id="taskProgressText">0 of 0 Completed</p>
+                
+                <div class="level-badge">
+                    <span>Level <span id="userLevel">1</span></span>
+                    <span>🔥 <span id="userStreak">0</span> Day Streak</span>
+                </div>
+            </div>
+            <div class="progress-circle">
+                <span id="progressPercent">0%</span>
+            </div>
+        </div>
+
+        <!-- Timeline Section -->
+        <div class="timeline-section">
+            <h3>Today's Activity</h3>
+            <div id="taskList" class="task-list">
+                <!-- Tasks will be injected here via JS -->
+                <p class="empty-state">No tasks scheduled for today. Add one below!</p>
+            </div>
+        </div>
+
+        <!-- Add Task Modal (Bottom Sheet) -->
+        <div id="taskModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Add Daily Task</h3>
+                    <button id="closeModalBtn" class="close-btn">&times;</button>
+                </div>
+                <form id="addTaskForm">
+                    <div class="input-group">
+                        <label for="taskTitle">What do you need to do?</label>
+                        <input type="text" id="taskTitle" required placeholder="e.g., Run 5km, Read 10 pages..." autocomplete="off">
+                    </div>
+                    <!-- Future: Goal Link Dropdown will go here -->
+                    <button type="submit" id="saveTaskBtn" class="btn-primary">Save Task</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Friends & Leaderboard Modal -->
+        <div id="friendsModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Blind Leaderboard</h3>
+                    <button id="closeFriendsBtn" class="close-btn">&times;</button>
+                </div>
+                
+                <!-- Search for Friends -->
+                <div class="input-group" style="margin-bottom: 24px;">
+                    <label for="friendSearchInput">Add a Friend</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="friendSearchInput" placeholder="Enter exact username..." style="flex-grow: 1;">
+                        <button id="searchFriendBtn" class="btn-primary" style="width: auto; margin-top: 0;">Search</button>
+                    </div>
+                    <div id="friendSearchResult" style="margin-top: 12px; font-size: 14px;"></div>
+                </div>
+
+                <!-- The Leaderboard -->
+                <h4>Top Streaks</h4>
+                <div id="leaderboardList" class="task-list" style="margin-top: 12px;">
+                    <!-- Friend ranks will inject here -->
+                    <p class="empty-state">No friends yet. Search a username above to start competing!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fixed Bottom Navigation -->
+        <nav class="bottom-nav">
+            <a href="dashboard.html" class="nav-item active">🏠</a>
+            <a href="goals.html" class="nav-item">🎯</a>
+            <button id="fabAdd" class="fab-button">+</button>
+            <a href="chat.html" class="nav-item">💬</a>
+            <a href="achievements.html" class="nav-item">🏆</a>
+        </nav>
+        
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/ui.js"></script>
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>

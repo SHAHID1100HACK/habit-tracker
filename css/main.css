@@ -1,0 +1,65 @@
+/* css/main.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    /* LIGHT THEME (Based on your UI Inspiration screenshot) */
+    --bg-color: #F4F7F8;
+    --surface-color: #FFFFFF;
+    --surface-2: #F8F9FA;
+    --text-primary: #1A1A2E;
+    --text-secondary: #8E98A8;
+    --primary-color: #00C49A; /* The teal from the screenshot */
+    --primary-hover: #00A380;
+    --border-color: #E2E8F0;
+    
+    /* Gamification Colors (Consistent across themes) */
+    --xp-gold: #FFD700;
+    --streak-fire: #FF6B35;
+    --success: #4CAF82;
+    --danger: #FF6B6B;
+}
+
+[data-theme="dark"] {
+    /* DARK THEME (Based on your PRD) */
+    --bg-color: #0F0F1A;
+    --surface-color: #1A1A2E;
+    --surface-2: #22223B;
+    --text-primary: #F0F0FF;
+    --text-secondary: #9999BB;
+    --primary-color: #6C63FF; /* The purple from the PRD */
+    --primary-hover: #4B44CC;
+    --border-color: #2A2A4A;
+}
+
+/* Global Reset & Base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Global Focus State (Security & Accessibility from PRD) */
+:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 3px;
+    border-radius: 6px;
+}
+
+/* Reusable Utility Classes */
+.hidden {
+    display: none !important;
+}
+
+.container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 24px;
+}

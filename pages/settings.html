@@ -1,0 +1,50 @@
+<!-- pages/settings.html -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | HabitMentor</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container dashboard-container">
+        <!-- Header -->
+        <header class="dash-header">
+            <div>
+                <p class="date-text">Preferences</p>
+                <h1>Settings</h1>
+            </div>
+            <a href="dashboard.html" class="btn-primary" style="text-decoration: none; padding: 8px 16px; width: auto;">Back</a>
+        </header>
+
+        <!-- Edit Profile Card -->
+        <div class="hero-card" style="flex-direction: column; align-items: flex-start; gap: 20px;">
+            <h2>Edit Profile</h2>
+            
+            <p id="uploadStatus" style="font-size: 14px; margin: 0; font-weight: bold;"></p>
+
+            <!-- Username Change -->
+            <div class="input-group" style="width: 100%;">
+                <label for="usernameInput">Username (Can be changed once every 30 days)</label>
+                <input type="text" id="usernameInput" placeholder="Enter new username...">
+            </div>
+
+            <button id="saveProfileBtn" class="btn-primary">Save Changes</button>
+        </div>
+
+        <!-- Logout Section -->
+        <div class="legal-container">
+            <div class="legal-content">
+                <h2>Account Access</h2>
+                <button id="logoutBtn" style="background: var(--surface-2); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; width: 100%; cursor: pointer; color: var(--text-primary); font-weight: bold;">Log Out</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/settings.js"></script>
+</body>
+</html>

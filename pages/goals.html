@@ -1,0 +1,55 @@
+<!-- pages/goals.html -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vision Board | HabitMentor</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container dashboard-container">
+        <!-- Header -->
+        <header class="dash-header">
+            <div>
+                <p class="date-text">Long-Term Focus</p>
+                <h1>Vision Board</h1>
+            </div>
+            <a href="settings.html" class="avatar-circle">⚙️</a>
+        </header>
+
+        <!-- Add Goal Card -->
+        <div class="hero-card" style="flex-direction: column; align-items: flex-start; gap: 16px;">
+            <h2>What is your ultimate target?</h2>
+            <form id="goalForm" style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
+                <textarea id="goalInput" required rows="3" placeholder="e.g., Secure a top rank in the JKBOPEE entrance exam, or build a functional internal SOC lab..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--surface-color); color: var(--text-primary); font-family: inherit; resize: none;"></textarea>
+                <button type="submit" id="saveGoalBtn" class="btn-primary">Lock in Goal 🎯</button>
+            </form>
+        </div>
+
+        <!-- Saved Goals List -->
+        <div class="timeline-section" style="margin-bottom: 80px;">
+            <h3>Your Active Targets</h3>
+            <div id="goalList" class="task-list">
+                <!-- Goals will inject here -->
+                <p class="empty-state">No big targets set yet. Define your vision above!</p>
+            </div>
+        </div>
+
+        <!-- Fixed Bottom Navigation -->
+        <nav class="bottom-nav">
+            <a href="dashboard.html" class="nav-item">🏠</a>
+            <a href="goals.html" class="nav-item active">🎯</a>
+            <a href="dashboard.html" class="fab-button">+</a>
+            <a href="chat.html" class="nav-item">💬</a>
+            <a href="achievements.html" class="nav-item">🏆</a>
+        </nav>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/ui.js"></script>
+    <script src="../js/goals.js"></script>
+</body>
+</html>

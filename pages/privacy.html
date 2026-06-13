@@ -1,0 +1,47 @@
+<!-- pages/privacy.html -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy | HabitMentor</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+</head>
+<body>
+    <div class="container dashboard-container">
+        <!-- Header with Back Button -->
+        <header class="dash-header">
+            <div>
+                <p class="date-text">Legal</p>
+                <h1>Privacy Policy</h1>
+            </div>
+            <a href="javascript:history.back()" class="btn-primary" style="text-decoration: none; padding: 8px 16px; width: auto;">Back</a>
+        </header>
+
+        <!-- Legal Content -->
+        <div class="legal-container">
+            <div class="legal-content">
+                <h2>1. Information We Collect</h2>
+                <p>When you use HabitMentor, we collect basic account information (such as your email and username) via Supabase authentication. We also store your tasks, streaks, and AI chat history to provide our core services.</p>
+
+                <h2>2. How We Use AI</h2>
+                <p>We use Cloudflare Workers AI (Llama 3.1) to power your pocket mentor and roadmap generator. Your chat inputs are sent to this service to generate responses. Please do not share highly sensitive personal information in the chat.</p>
+
+                <h2>3. Data Security</h2>
+                <p>Your data is secured using Row Level Security (RLS) policies. This ensures that your private tasks and chat histories can only be accessed by your authenticated account.</p>
+
+                <h2>4. Third-Party Services</h2>
+                <p>We utilize the following third-party services:</p>
+                <ul>
+                    <li><strong>Supabase:</strong> For secure database hosting and user authentication.</li>
+                    <li><strong>Cloudflare:</strong> For AI processing and secure API routing.</li>
+                </ul>
+
+                <h2>5. Contact Us</h2>
+                <p>If you have any questions about how your data is handled, please reach out to the developer.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
