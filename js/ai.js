@@ -1,5 +1,5 @@
 // js/ai.js
-console.log("HabitMentor AI Chat Initializing with Local Interceptor...");
+console.log("HabitMentor AI Chat Initializing with Task Awareness...");
 
 const chatBox = document.getElementById('chatBox');
 const chatForm = document.getElementById('chatForm');
@@ -13,7 +13,6 @@ function getLocalTodayString() {
     return new Date().toLocaleDateString('en-CA', { timeZone: userTimezone });
 }
 
-// --- 1. THE AUTHENTICATION HEIST ---
 function getManualSession() {
     try {
         const projectRef = CONFIG.SUPABASE_URL.split('//')[1].split('.')[0];
@@ -35,7 +34,6 @@ function getAuthHeaders() {
     };
 }
 
-// --- 2. AUTH GUARD ---
 const currentSession = getManualSession();
 if (!currentSession || !currentSession.user) {
     window.location.href = '../index.html';
@@ -44,7 +42,6 @@ if (!currentSession || !currentSession.user) {
     loadTodayChatHistory();
 }
 
-// --- 3. DATABASE HELPERS (NATIVE FETCH) ---
 async function loadTodayChatHistory() {
     try {
         const url = `${CONFIG.SUPABASE_URL}/rest/v1/ai_chat_history?user_id=eq.${currentUser.id}&session_date=eq.${getLocalTodayString()}&order=created_at.asc`;
@@ -59,7 +56,6 @@ async function loadTodayChatHistory() {
 }
 
 function saveChatMessageToDB(role, text) {
-    // Fire and forget
     fetch(`${CONFIG.SUPABASE_URL}/rest/v1/ai_chat_history`, {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -67,7 +63,6 @@ function saveChatMessageToDB(role, text) {
     }).catch(err => console.error("History save error:", err));
 }
 
-// --- 4. RENDER BUBBLES ---
 function appendBubble(role, text) {
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble ${role === 'user' ? 'user' : 'assistant'}`;
@@ -76,18 +71,31 @@ function appendBubble(role, text) {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// --- 5. MAIN EVENT LOOP (WITH LOCAL INTERCEPTOR) ---
+// --- NEW SNEAKY AI BRAIN FUNCTION ---
+async function getTodayTasksContext() {
+    try {
+        const url = `${CONFIG.SUPABASE_URL}/rest/v1/tasks?select=title,is_completed&user_id=eq.${currentUser.id}&scheduled_date=eq.${getLocalTodayString()}`;
+        const res = await fetch(url, { headers: getAuthHeaders() });
+        const tasks = await res.json();
+        if (!tasks || tasks.length === 0) return "The user has no tasks scheduled for today.";
+        
+        let context = "Here is the user's daily planner for today:\n";
+        tasks.forEach(t => context += `- ${t.title} (Status: ${t.is_completed ? 'Done' : 'Not Done'})\n`);
+        return context;
+    } catch (e) {
+        return "Could not load tasks.";
+    }
+}
+
 chatForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const messageText = chatInput.value.trim();
     if (!messageText) return;
 
-    // UI Updates
     appendBubble('user', messageText);
     chatInput.value = '';
     sendMsgBtn.disabled = true;
     
-    // Save user message immediately
     saveChatMessageToDB('user', messageText);
 
     const typingIndicator = document.createElement('div');
@@ -100,14 +108,11 @@ chatForm.addEventListener('submit', async (e) => {
         let aiReplyText = "";
         const lowerMsg = messageText.toLowerCase();
 
-        // 💥 THE LOCAL INTERCEPTOR: Bypass AI for Task Additions
         if (lowerMsg.startsWith('add:') || lowerMsg.startsWith('add ')) {
             
-            // Extract the task name (removes the "add:" or "add " part)
             const taskTitle = messageText.substring(4).trim();
             
             if (taskTitle) {
-                // Native Fetch Insert to Dashboard Tasks
                 const res = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/tasks`, {
                     method: 'POST',
                     headers: getAuthHeaders(),
@@ -122,13 +127,18 @@ chatForm.addEventListener('submit', async (e) => {
             }
 
         } else {
-            // NORMAL CHAT: Route to Cloudflare Worker
+            // NORMAL CHAT: Grab tasks and inject them secretly!
+            const taskContext = await getTodayTasksContext();
+            
             const response = await fetch(`${CONFIG.PROXY_URL}/ai`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     mode: 'mentor',
-                    messages: [{ role: 'user', content: messageText }]
+                    messages: [
+                        { role: 'system', content: `Context for this conversation: ${taskContext}` },
+                        { role: 'user', content: messageText }
+                    ]
                 })
             });
             
@@ -137,7 +147,6 @@ chatForm.addEventListener('submit', async (e) => {
             aiReplyText = data.reply;
         }
 
-        // Render Answer & Save to DB
         typingIndicator.remove();
         appendBubble('assistant', aiReplyText);
         saveChatMessageToDB('assistant', aiReplyText);
