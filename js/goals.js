@@ -3,9 +3,9 @@ const supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.
 
 const goalForm = document.getElementById('goalForm');
 const goalInput = document.getElementById('goalInput');
-const generateBtn = document.getElementById('generateBtn');
-const roadmapArea = document.getElementById('roadmapArea');
-const roadmapList = document.getElementById('roadmapList');
+// Match the IDs exactly as they appear in your HTML
+const saveGoalBtn = document.getElementById('saveGoalBtn'); 
+const goalList = document.getElementById('goalList');
 
 let currentUser = null;
 const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -14,74 +14,149 @@ function getLocalTodayString() {
     return new Date().toLocaleDateString('en-CA', { timeZone: userTimezone });
 }
 
-// Auth Guard
-supabaseClient.auth.onAuthStateChange((event, session) => {
-    if (!session) {
+// 1. Auth Guard & Initial Load
+supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    if (!session || !session.user) {
         window.location.href = '../index.html';
         return;
     }
     currentUser = session.user;
+    await loadExistingGoals();
 });
 
-// Generate Roadmap
-goalForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const goalText = goalInput.value.trim();
-    if (!goalText) return;
-
-    generateBtn.disabled = true;
-    generateBtn.textContent = "Analyzing Goal & Building Plan... 🧠";
-    roadmapArea.classList.add('hidden');
-    roadmapList.innerHTML = '';
+// 2. Fetch and Render Saved Goals
+async function loadExistingGoals() {
+    if (!goalList || !currentUser) return;
 
     try {
-        // 1. Ask AI to break it down
-        const response = await fetch(`${CONFIG.PROXY_URL}/ai`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                mode: 'roadmap',
-                messages: [{ role: 'user', content: goalText }]
-            })
-        });
+        const { data: goals, error } = await supabaseClient
+            .from('goals')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .order('created_at', { ascending: false });
 
-        if (!response.ok) throw new Error("AI Request Failed");
-        const data = await response.json();
-
-        // 2. Parse the Llama 3.1 JSON output securely
-        let cleanJsonString = data.reply.substring(data.reply.indexOf('{'), data.reply.lastIndexOf('}') + 1);
-        const parsedData = JSON.parse(cleanJsonString);
-
-        if (!parsedData.tasks || !Array.isArray(parsedData.tasks)) throw new Error("Invalid format");
-
-        // 3. Prepare data for Supabase Bulk Insert
-        const tasksToInsert = parsedData.tasks.map(taskTitle => ({
-            user_id: currentUser.id,
-            title: taskTitle,
-            scheduled_date: getLocalTodayString(),
-            xp_value: 20 // Roadmap tasks give double XP!
-        }));
-
-        // 4. Insert directly to the user's timeline
-        const { error } = await supabaseClient.from('tasks').insert(tasksToInsert);
         if (error) throw error;
 
-        // 5. Display the newly generated roadmap
-        parsedData.tasks.forEach((task, index) => {
+        goalList.innerHTML = '';
+
+        if (!goals || goals.length === 0) {
+            goalList.innerHTML = '<p class="empty-state">No big targets set yet. Define your vision above!</p>';
+            return;
+        }
+
+        goals.forEach((goal) => {
             const card = document.createElement('div');
             card.className = 'task-card';
-            card.innerHTML = `<span style="font-weight: bold; margin-right: 12px; color: var(--primary-color);">Step ${index + 1}</span> <span>${task}</span>`;
-            roadmapList.appendChild(card);
+            card.style.flexDirection = 'column';
+            card.style.alignItems = 'flex-start';
+            card.style.gap = '8px';
+
+            let roadmapStepsHtml = '';
+            if (goal.roadmap && Array.isArray(goal.roadmap.tasks)) {
+                roadmapStepsHtml = `
+                    <div style="margin-top: 8px; width: 100%; border-top: 1px solid var(--border-color); padding-top: 8px;">
+                        <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Generated Roadmap Steps:</span>
+                        <ul style="margin: 4px 0 0 0; padding-left: 20px; font-size: 13px;">
+                            ${goal.roadmap.tasks.map(t => `<li>${t}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                    <span class="task-title" style="font-weight: 600;">${goal.title}</span>
+                    <span style="font-size: 11px; background: var(--surface-color); border: 1px solid var(--border-color); padding: 2px 8px; border-radius: 6px;">
+                        ${new Date(goal.created_at).toLocaleDateString()}
+                    </span>
+                </div>
+                ${roadmapStepsHtml}
+            `;
+            goalList.appendChild(card);
         });
-
-        roadmapArea.classList.remove('hidden');
-        goalInput.value = '';
-
     } catch (err) {
-        console.error("Roadmap generation failed:", err);
-        alert("The AI had trouble parsing that goal. Try making it a bit more specific!");
-    } finally {
-        generateBtn.disabled = false;
-        generateBtn.textContent = "Generate Another Roadmap ⚡";
+        console.error("Error loading goals:", err);
     }
-});
+}
+
+// 3. Generate Roadmap & Save
+if (goalForm) {
+    goalForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const goalText = goalInput.value.trim();
+        if (!goalText || !currentUser) return;
+
+        saveGoalBtn.disabled = true;
+        saveGoalBtn.textContent = "Analyzing & Building Plan...";
+
+        try {
+            // 1. Ask AI to break it down
+            const response = await fetch(`${CONFIG.PROXY_URL}/ai`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    mode: 'roadmap',
+                    messages: [{ role: 'user', content: goalText }]
+                })
+            });
+
+            if (!response.ok) throw new Error("AI Request Failed");
+            const data = await response.json();
+
+            // 2. Robust JSON parsing (prevents crashes from bad AI formatting)
+            let rawReply = (data.reply || '').replace(/```json/gi, '').replace(/```/g, '').trim();
+            const firstBracket = rawReply.indexOf('{');
+            const lastBracket = rawReply.lastIndexOf('}');
+            
+            let parsedRoadmap = { tasks: [] };
+
+            if (firstBracket !== -1 && lastBracket !== -1) {
+                try {
+                    const cleanJsonString = rawReply.substring(firstBracket, lastBracket + 1);
+                    parsedRoadmap = JSON.parse(cleanJsonString);
+                } catch (parseErr) {
+                    console.warn("Could not parse AI output as JSON, saving raw goal.", parseErr);
+                }
+            }
+
+            // 3. Insert Goal into DB
+            const { data: insertedGoal, error: goalError } = await supabaseClient
+                .from('goals')
+                .insert([{
+                    user_id: currentUser.id,
+                    title: goalText,
+                    category: 'learning',
+                    roadmap: parsedRoadmap
+                }])
+                .select()
+                .single();
+
+            if (goalError) throw goalError;
+
+            // 4. Insert Roadmap Steps as Daily Tasks
+            if (parsedRoadmap.tasks && Array.isArray(parsedRoadmap.tasks) && parsedRoadmap.tasks.length > 0) {
+                const tasksToInsert = parsedRoadmap.tasks.map(taskTitle => ({
+                    user_id: currentUser.id,
+                    goal_id: insertedGoal.id, // Link task to the new goal
+                    title: taskTitle,
+                    scheduled_date: getLocalTodayString(),
+                    xp_value: 20 // Roadmap tasks give double XP!
+                }));
+
+                const { error: tasksError } = await supabaseClient.from('tasks').insert(tasksToInsert);
+                if (tasksError) console.error("Error inserting generated tasks:", tasksError);
+            }
+
+            goalInput.value = '';
+            await loadExistingGoals(); // Refresh the list
+            alert("Goal locked in! Actionable tasks have been added to your timeline.");
+
+        } catch (err) {
+            console.error("Roadmap generation failed:", err);
+            alert("The AI had trouble parsing that goal. Try making it a bit more specific!");
+        } finally {
+            saveGoalBtn.disabled = false;
+            saveGoalBtn.textContent = "Lock in Goal";
+        }
+    });
+}

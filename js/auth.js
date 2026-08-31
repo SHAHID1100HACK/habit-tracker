@@ -8,6 +8,7 @@ const submitBtn = document.getElementById('submitBtn');
 const switchModeBtn = document.getElementById('switchMode');
 const formTitle = document.getElementById('formTitle');
 const switchText = document.getElementById('switchText');
+const authError = document.getElementById('authError'); // Assuming you have an error div
 
 let isLogin = false; // Start in Sign Up mode
 
@@ -16,6 +17,8 @@ switchModeBtn.addEventListener('click', (e) => {
     e.preventDefault();
     isLogin = !isLogin;
     
+    if (authError) authError.classList.add('hidden');
+
     if (isLogin) {
         formTitle.textContent = 'Log In';
         submitBtn.textContent = 'Enter Mentor';
@@ -40,11 +43,15 @@ authForm.addEventListener('submit', async (e) => {
     
     submitBtn.disabled = true;
     submitBtn.textContent = 'Processing...';
-    
+    if (authError) authError.classList.add('hidden');
+
     try {
         if (isLogin) {
             // LOGIN FLOW
-            const { error } = await supabaseClient.auth.signInWithPassword({ email: dummyEmail, password });
+            const { error } = await supabaseClient.auth.signInWithPassword({ 
+                email: dummyEmail, 
+                password 
+            });
             if (error) throw error;
             window.location.href = 'pages/dashboard.html';
             
@@ -64,7 +71,12 @@ authForm.addEventListener('submit', async (e) => {
         }
     } catch (error) {
         // Show invalid login messages
-        alert(error.message);
+        if (authError) {
+            authError.textContent = error.message;
+            authError.classList.remove('hidden');
+        } else {
+            alert(error.message);
+        }
     } finally {
         // THIS FIXES THE FROZEN BUTTON: It will always re-enable
         submitBtn.disabled = false;

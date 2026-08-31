@@ -1,5 +1,7 @@
 // js/dashboard.js
-console.log("HabitMentor Dashboard Initializing with ABSOLUTE Native Override...");
+console.log("HabitMentor Dashboard Initializing (Secured)...");
+
+const supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
 // DOM Elements
 const currentDateEl = document.getElementById('currentDate');
@@ -9,7 +11,6 @@ const greetingEl = document.getElementById('greeting');
 const userInitialEl = document.getElementById('userInitial');
 const userLevelEl = document.getElementById('userLevel');
 const userStreakEl = document.getElementById('userStreak');
-
 const taskModal = document.getElementById('taskModal');
 const fabAdd = document.getElementById('fabAdd');
 const closeModalBtn = document.getElementById('closeModalBtn');
@@ -19,7 +20,6 @@ const saveTaskBtn = document.getElementById('saveTaskBtn');
 const taskListEl = document.getElementById('taskList');
 const taskProgressText = document.getElementById('taskProgressText');
 const progressPercent = document.getElementById('progressPercent');
-
 const friendsModal = document.getElementById('friendsModal');
 const friendsBtn = document.getElementById('friendsBtn');
 const closeFriendsBtn = document.getElementById('closeFriendsBtn');
@@ -30,10 +30,9 @@ const leaderboardList = document.getElementById('leaderboardList');
 
 let currentUser = null;
 const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-// --- 1. TIME TRAVEL LOGIC (MOVED TO TOP TO FIX CRASH) ---
 let currentViewingDate = new Date();
 
+// --- 1. TIME TRAVEL LOGIC ---
 function getViewingDateString() {
     return currentViewingDate.toLocaleDateString('en-CA', { timeZone: userTimezone });
 }
@@ -45,7 +44,7 @@ function updateDateDisplay() {
     
     const options = { weekday: 'short', month: 'short', day: 'numeric' };
     const formattedDate = currentViewingDate.toLocaleDateString('en-US', options);
-
+    
     if (currentDateEl) {
         if (viewString === todayString) {
             currentDateEl.textContent = "Today, " + formattedDate;
@@ -60,49 +59,36 @@ function updateDateDisplay() {
     if (currentUser) loadTasksForDate();
 }
 
-if (prevDateBtn) prevDateBtn.addEventListener('click', () => { currentViewingDate.setDate(currentViewingDate.getDate() - 1); updateDateDisplay(); });
-if (nextDateBtn) nextDateBtn.addEventListener('click', () => { currentViewingDate.setDate(currentViewingDate.getDate() + 1); updateDateDisplay(); });
+if (prevDateBtn) prevDateBtn.addEventListener('click', () => { 
+    currentViewingDate.setDate(currentViewingDate.getDate() - 1); 
+    updateDateDisplay(); 
+});
+if (nextDateBtn) nextDateBtn.addEventListener('click', () => { 
+    currentViewingDate.setDate(currentViewingDate.getDate() + 1); 
+    updateDateDisplay(); 
+});
 
-
-// --- 2. THE AUTHENTICATION HEIST ---
-function getManualSession() {
-    try {
-        const projectRef = CONFIG.SUPABASE_URL.split('//')[1].split('.')[0];
-        const sessionStr = localStorage.getItem(`sb-${projectRef}-auth-token`);
-        return sessionStr ? JSON.parse(sessionStr) : null;
-    } catch (e) {
-        return null;
+// --- 2. SECURE AUTH GUARD ---
+supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    if (!session || !session.user) {
+        window.location.href = '../index.html';
+        return;
     }
-}
+    currentUser = session.user;
+    updateDateDisplay();
+    await loadUserProfile();
+});
 
-function getAuthHeaders() {
-    const session = getManualSession();
-    if (!session || !session.access_token) throw new Error("No valid session found.");
-    return {
-        'apikey': CONFIG.SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation'
-    };
-}
-
-// --- 3. AUTH GUARD ---
-const currentSession = getManualSession();
-if (!currentSession || !currentSession.user) {
-    console.error("No user found in Local Storage. Redirecting to login...");
-    window.location.href = '../index.html';
-} else {
-    currentUser = currentSession.user;
-    updateDateDisplay(); // Now this works perfectly because the variables exist!
-    loadUserProfile();
-}
-
-// --- 4. NATIVE FETCH DATA LOADING ---
+// --- 3. PROFILES & TASKS (USING SUPABASE SDK) ---
 async function loadUserProfile() {
     try {
-        const res = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/profiles?id=eq.${currentUser.id}&select=*`, { headers: getAuthHeaders() });
-        if (!res.ok) throw new Error(await res.text());
-        const data = (await res.json())[0];
+        const { data, error } = await supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single();
+
+        if (error) throw error;
         if (!data) return;
 
         const username = data.username || currentUser.email.split('@')[0];
@@ -117,15 +103,51 @@ async function loadUserProfile() {
 
 async function loadTasksForDate() {
     try {
-        const res = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/tasks?select=*&user_id=eq.${currentUser.id}&scheduled_date=eq.${getViewingDateString()}&order=created_at.asc`, { headers: getAuthHeaders() });
-        if (!res.ok) throw new Error(await res.text());
-        renderTasks(await res.json());
+        const { data: tasks, error } = await supabaseClient
+            .from('tasks')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .eq('scheduled_date', getViewingDateString())
+            .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        renderTasks(tasks);
     } catch (err) {
         console.error("Task load error:", err);
     }
 }
 
-// --- 5. MODALS & TASK ADDITION (NATIVE) ---
+function renderTasks(tasks) {
+    if(!taskListEl) return;
+    taskListEl.innerHTML = ''; 
+
+    if (!tasks || tasks.length === 0) {
+        taskListEl.innerHTML = '<p class="empty-state">No tasks scheduled for this day. Add one below!</p>';
+        if(taskProgressText) taskProgressText.textContent = "0 of 0 Completed";
+        if(progressPercent) progressPercent.textContent = "0%";
+        return;
+    }
+
+    let completedCount = 0;
+    tasks.forEach(task => {
+        if (task.is_completed) completedCount++;
+        
+        const card = document.createElement('div');
+        card.className = `task-card ${task.is_completed ? 'completed' : ''}`;
+        card.innerHTML = `<div class="task-checkbox">${task.is_completed ? '✓' : ''}</div><span class="task-title">${task.title}</span>`;
+        
+        if (!task.is_completed) {
+            card.onclick = () => markTaskComplete(task.id, card);
+            card.style.cursor = 'pointer';
+        }
+        taskListEl.appendChild(card);
+    });
+
+    if(taskProgressText) taskProgressText.textContent = `${completedCount} of ${tasks.length} Completed`;
+    if(progressPercent) progressPercent.textContent = `${Math.round((completedCount / tasks.length) * 100)}%`;
+}
+
+// --- 4. TASK CREATION & COMPLETION ---
 if(fabAdd) fabAdd.addEventListener('click', () => taskModal.classList.remove('hidden'));
 if(closeModalBtn) closeModalBtn.addEventListener('click', () => taskModal.classList.add('hidden'));
 
@@ -134,22 +156,22 @@ if(addTaskForm) {
         e.preventDefault();
         const title = taskTitleInput.value.trim();
         if (!title) return;
-
+        
         saveTaskBtn.disabled = true;
         saveTaskBtn.textContent = "Saving...";
-
+        
         try {
-            const requestPromise = fetch(`${CONFIG.SUPABASE_URL}/rest/v1/tasks`, {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ user_id: currentUser.id, title: title, scheduled_date: getViewingDateString(), xp_value: 10 })
-            });
+            const { error } = await supabaseClient
+                .from('tasks')
+                .insert([{ 
+                    user_id: currentUser.id, 
+                    title: title, 
+                    scheduled_date: getViewingDateString(), 
+                    xp_value: 10 
+                }]);
 
-            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Network timed out.")), 5000));
-            const res = await Promise.race([requestPromise, timeoutPromise]);
+            if (error) throw error;
             
-            if (!res.ok) throw new Error(`DB Error: ${await res.text()}`);
-
             taskModal.classList.add('hidden');
             addTaskForm.reset();
             await loadTasksForDate();
@@ -163,43 +185,17 @@ if(addTaskForm) {
     });
 }
 
-function renderTasks(tasks) {
-    if(!taskListEl) return;
-    taskListEl.innerHTML = ''; 
-    if (!tasks || tasks.length === 0) {
-        taskListEl.innerHTML = '<p class="empty-state">No tasks scheduled for this day. Add one below!</p>';
-        if(taskProgressText) taskProgressText.textContent = "0 of 0 Completed";
-        if(progressPercent) progressPercent.textContent = "0%";
-        return;
-    }
-
-    let completedCount = 0;
-    tasks.forEach(task => {
-        if (task.is_completed) completedCount++;
-        const card = document.createElement('div');
-        card.className = `task-card ${task.is_completed ? 'completed' : ''}`;
-        card.innerHTML = `<div class="task-checkbox">${task.is_completed ? '✓' : ''}</div><span class="task-title">${task.title}</span>`;
-        if (!task.is_completed) {
-            card.onclick = () => markTaskComplete(task.id, card);
-            card.style.cursor = 'pointer';
-        }
-        taskListEl.appendChild(card);
-    });
-
-    if(taskProgressText) taskProgressText.textContent = `${completedCount} of ${tasks.length} Completed`;
-    if(progressPercent) progressPercent.textContent = `${Math.round((completedCount / tasks.length) * 100)}%`;
-}
-
 async function markTaskComplete(taskId, cardElement) {
     cardElement.style.pointerEvents = 'none';
     cardElement.style.opacity = '0.5';
     try {
-        const res = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/rpc/complete_task_and_award_xp`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ p_task_id: taskId, p_user_id: currentUser.id })
+        const { error } = await supabaseClient.rpc('complete_task_and_award_xp', { 
+            p_task_id: taskId, 
+            p_user_id: currentUser.id 
         });
-        if (!res.ok) throw new Error(await res.text());
+
+        if (error) throw error;
+        
         await loadUserProfile();
         await loadTasksForDate();
     } catch (err) {
@@ -209,22 +205,34 @@ async function markTaskComplete(taskId, cardElement) {
     }
 }
 
-// --- 6. LEADERBOARD (NATIVE) ---
-if(friendsBtn) friendsBtn.addEventListener('click', () => { friendsModal.classList.remove('hidden'); loadLeaderboard(); });
-if(closeFriendsBtn) closeFriendsBtn.addEventListener('click', () => { friendsModal.classList.add('hidden'); friendSearchInput.value = ''; friendSearchResult.innerHTML = ''; });
+// --- 5. LEADERBOARD ---
+if(friendsBtn) friendsBtn.addEventListener('click', () => { 
+    friendsModal.classList.remove('hidden'); 
+    loadLeaderboard(); 
+});
+if(closeFriendsBtn) closeFriendsBtn.addEventListener('click', () => { 
+    friendsModal.classList.add('hidden'); 
+    friendSearchInput.value = ''; 
+    friendSearchResult.innerHTML = ''; 
+});
 
 if(searchFriendBtn) {
     searchFriendBtn.addEventListener('click', async () => {
         const query = friendSearchInput.value.trim();
         if (!query) return;
+        
         searchFriendBtn.textContent = '...';
         try {
-            const res = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/profiles?username=eq.${query}&select=id,username`, { headers: getAuthHeaders() });
-            const data = await res.json();
-            if (!data || data.length === 0) throw new Error('User not found');
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('id, username')
+                .eq('username', query);
+
+            if (error || !data || data.length === 0) throw new Error('User not found');
+            
             const friend = data[0];
             if (friend.id === currentUser.id) throw new Error('Cannot add yourself');
-
+            
             friendSearchResult.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; background: var(--surface-2); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
                 <strong>${friend.username}</strong><button onclick="sendFriendRequest('${friend.id}')" class="btn-primary" style="margin: 0; padding: 6px 14px; font-size: 12px; width: auto;">Add</button></div>`;
         } catch (err) {
@@ -237,12 +245,12 @@ if(searchFriendBtn) {
 
 window.sendFriendRequest = async (receiverId) => {
     try {
-        const res = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/friendships`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ requester_id: currentUser.id, receiver_id: receiverId })
-        });
-        if (!res.ok) throw new Error("Failed to add friend");
+        const { error } = await supabaseClient
+            .from('friendships')
+            .insert([{ requester_id: currentUser.id, receiver_id: receiverId }]);
+
+        if (error) throw error;
+        
         friendSearchResult.innerHTML = `<p style="color: var(--primary-color); font-weight: bold;">Added to leaderboard!</p>`;
         await loadLeaderboard();
     } catch (err) {
@@ -253,14 +261,23 @@ window.sendFriendRequest = async (receiverId) => {
 async function loadLeaderboard() {
     if(!leaderboardList) return;
     try {
-        const fRes = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/friendships?requester_id=eq.${currentUser.id}&select=receiver_id`, { headers: getAuthHeaders() });
-        const friends = await fRes.json();
+        const { data: friends, error: fError } = await supabaseClient
+            .from('friendships')
+            .select('receiver_id')
+            .eq('requester_id', currentUser.id);
+
+        if (fError) throw fError;
+
         const friendIds = friends ? friends.map(f => f.receiver_id) : [];
         friendIds.push(currentUser.id);
 
-        const idString = friendIds.map(id => `"${id}"`).join(',');
-        const pRes = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/profiles?id=in.(${idString})&select=username,level,streak_current,id&order=streak_current.desc`, { headers: getAuthHeaders() });
-        const profiles = await pRes.json();
+        const { data: profiles, error: pError } = await supabaseClient
+            .from('profiles')
+            .select('username, level, streak_current, id')
+            .in('id', friendIds)
+            .order('streak_current', { ascending: false });
+
+        if (pError) throw pError;
 
         leaderboardList.innerHTML = '';
         profiles.forEach((p, index) => {
@@ -269,6 +286,7 @@ async function loadLeaderboard() {
             card.className = 'task-card';
             card.style.cursor = 'default';
             if (isMe) card.style.borderLeft = '4px solid var(--primary-color)';
+            
             card.innerHTML = `<div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                 <span style="font-weight: bold;">#${index + 1} <span style="font-weight: normal; margin-left: 8px;">${p.username} ${isMe ? '(You)' : ''}</span></span>
                 <span style="font-size: 14px;">🔥 ${p.streak_current} <span style="margin: 0 4px; color: var(--text-secondary);">|</span> Lvl ${p.level}</span></div>`;
