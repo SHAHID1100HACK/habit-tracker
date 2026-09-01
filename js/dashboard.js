@@ -3,7 +3,8 @@ const supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.
 const datePicker = document.getElementById('datePicker');
 const greetingEl = document.getElementById('greeting');
 const taskModal = document.getElementById('taskModal');
-const taskListEl = document.getElementById('taskList');
+const habitListEl = document.getElementById('habitList');
+const oneTimeListEl = document.getElementById('oneTimeList');
 const taskProgressText = document.getElementById('taskProgressText');
 const progressPercent = document.getElementById('progressPercent');
 const friendSearchInput = document.getElementById('friendSearchInput');
@@ -58,33 +59,55 @@ async function loadUserProfile() {
 // Tasks Logic
 async function loadTasksForDate() {
     try {
-        const { data: tasks, error } = await supabaseClient.from('tasks').select('*').eq('user_id', currentUser.id).eq('scheduled_date', getViewingDateString()).order('created_at', { ascending: true });
+        const { data: tasks, error } = await supabaseClient
+            .from('tasks')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .eq('scheduled_date', getViewingDateString())
+            .order('created_at', { ascending: true });
+            
         if (error) throw error;
         renderTasks(tasks);
     } catch (err) { console.error(err); }
 }
 
 function renderTasks(tasks) {
-    if(!taskListEl) return;
-    taskListEl.innerHTML = ''; 
-    if (!tasks || tasks.length === 0) {
-        taskListEl.innerHTML = '<p class="empty-state">No tasks scheduled for this day.</p>';
-        if(taskProgressText) taskProgressText.textContent = "0 of 0 Completed";
-        if(progressPercent) progressPercent.textContent = "0%";
-        return;
-    }
+    if(!habitListEl || !oneTimeListEl) return;
+    
+    habitListEl.innerHTML = ''; 
+    oneTimeListEl.innerHTML = '';
+
     let completedCount = 0;
-    tasks.forEach(task => {
-        if (task.is_completed) completedCount++;
-        const card = document.createElement('div');
-        card.className = `task-card ${task.is_completed ? 'completed' : ''}`;
-        card.innerHTML = `<div class="task-checkbox">${task.is_completed ? '✓' : ''}</div><span class="task-title">${task.title}</span>`;
-        card.onclick = () => toggleTaskComplete(task.id, task.is_completed, card);
-        card.style.cursor = 'pointer';
-        taskListEl.appendChild(card);
-    });
-    if(taskProgressText) taskProgressText.textContent = `${completedCount} of ${tasks.length} Completed`;
-    if(progressPercent) progressPercent.textContent = `${Math.round((completedCount / tasks.length) * 100)}%`;
+    let habitCount = 0;
+    let oneTimeCount = 0;
+
+    if (tasks && tasks.length > 0) {
+        tasks.forEach(task => {
+            if (task.is_completed) completedCount++;
+            
+            const card = document.createElement('div');
+            card.className = `task-card ${task.is_completed ? 'completed' : ''}`;
+            card.innerHTML = `<div class="task-checkbox">${task.is_completed ? '✓' : ''}</div><span class="task-title">${task.title}</span>`;
+            card.onclick = () => toggleTaskComplete(task.id, task.is_completed, card);
+            card.style.cursor = 'pointer';
+            
+            // Route to correct list based on task_type
+            if (task.task_type === 'one-time') {
+                oneTimeListEl.appendChild(card);
+                oneTimeCount++;
+            } else {
+                habitListEl.appendChild(card);
+                habitCount++;
+            }
+        });
+    }
+
+    if (habitCount === 0) habitListEl.innerHTML = '<p class="empty-state">No habits scheduled.</p>';
+    if (oneTimeCount === 0) oneTimeListEl.innerHTML = '<p class="empty-state">No one-time tasks for today.</p>';
+
+    const totalTasks = habitCount + oneTimeCount;
+    if(taskProgressText) taskProgressText.textContent = `${completedCount} of ${totalTasks} Completed`;
+    if(progressPercent) progressPercent.textContent = totalTasks > 0 ? `${Math.round((completedCount / totalTasks) * 100)}%` : '0%';
 }
 
 async function toggleTaskComplete(taskId, currentlyCompleted, cardElement) {
@@ -109,12 +132,20 @@ async function toggleTaskComplete(taskId, currentlyCompleted, cardElement) {
 
 document.getElementById('fabAdd')?.addEventListener('click', () => taskModal.classList.remove('hidden'));
 document.getElementById('closeModalBtn')?.addEventListener('click', () => taskModal.classList.add('hidden'));
+
 document.getElementById('addTaskForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const title = document.getElementById('taskTitle').value.trim();
+    const type = document.getElementById('taskType').value;
+    
     if (!title) return;
     try {
-        const { error } = await supabaseClient.from('tasks').insert([{ user_id: currentUser.id, title: title, scheduled_date: getViewingDateString() }]);
+        const { error } = await supabaseClient.from('tasks').insert([{ 
+            user_id: currentUser.id, 
+            title: title, 
+            scheduled_date: getViewingDateString(),
+            task_type: type
+        }]);
         if (error) throw error;
         taskModal.classList.add('hidden');
         document.getElementById('addTaskForm').reset();
@@ -184,7 +215,6 @@ window.declineRequest = async (friendshipId) => {
     } catch (err) { console.error(err); }
 };
 
-// NEW: Remove an already accepted friend
 window.removeFriend = async (friendshipId) => {
     if (!confirm("Remove this friend from your leaderboard?")) return;
     try {
@@ -204,21 +234,20 @@ async function loadLeaderboard() {
 
         let friendIds = [currentUser.id];
         let pendingRequests = [];
-        let friendshipMap = {}; // Maps a friend's user ID to their friendship row ID
+        let friendshipMap = {};
 
         if (friendships) {
             friendships.forEach(f => {
                 if (f.status === 'accepted') {
                     const friendId = f.requester_id === currentUser.id ? f.receiver_id : f.requester_id;
                     friendIds.push(friendId);
-                    friendshipMap[friendId] = f.id; // Save the row ID so we can delete it later
+                    friendshipMap[friendId] = f.id;
                 } else if (f.status === 'pending' && f.receiver_id === currentUser.id) {
                     pendingRequests.push(f);
                 }
             });
         }
 
-        // --- RENDER PENDING REQUESTS ---
         if (pendingRequests.length > 0) {
             pendingRequestsContainer.classList.remove('hidden');
             pendingRequestsList.innerHTML = '';
@@ -245,7 +274,6 @@ async function loadLeaderboard() {
             pendingRequestsContainer.classList.add('hidden');
         }
 
-        // --- RENDER LEADERBOARD ---
         const { data: profiles } = await supabaseClient.from('profiles').select('username, level, streak_current, id').in('id', friendIds).order('streak_current', { ascending: false });
         
         leaderboardList.innerHTML = '';
@@ -255,7 +283,6 @@ async function loadLeaderboard() {
             card.className = 'task-card';
             if (isMe) card.style.borderLeft = '4px solid var(--primary-color)';
             
-            // NEW: Add a remove button (✖) for everyone except yourself
             let removeBtnHTML = '';
             if (!isMe) {
                 const fId = friendshipMap[p.id];

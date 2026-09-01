@@ -43,11 +43,16 @@
             </div>
         </div>
 
-        <!-- Timeline Section -->
-        <div class="timeline-section">
-            <h3>Today's Activity</h3>
-            <div id="taskList" class="task-list">
-                <p class="empty-state">No tasks scheduled for today. Add one below!</p>
+        <!-- NEW: Split Timeline Section -->
+        <div class="timeline-section" style="margin-bottom: 80px;">
+            <h3 style="font-size: 16px; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">🔁 Daily Habits</h3>
+            <div id="habitList" class="task-list" style="margin-bottom: 32px;">
+                <p class="empty-state">No habits scheduled. Add one below!</p>
+            </div>
+
+            <h3 style="font-size: 16px; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">📌 One-Time Tasks</h3>
+            <div id="oneTimeList" class="task-list">
+                <p class="empty-state">No one-time tasks for today.</p>
             </div>
         </div>
 
@@ -55,20 +60,30 @@
         <div id="taskModal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Add Daily Task</h3>
+                    <h3>Add New Target</h3>
                     <button id="closeModalBtn" class="close-btn">&times;</button>
                 </div>
                 <form id="addTaskForm">
                     <div class="input-group">
                         <label for="taskTitle">What do you need to do?</label>
-                        <input type="text" id="taskTitle" required placeholder="e.g., Run 5km, Read 10 pages..." autocomplete="off">
+                        <input type="text" id="taskTitle" required placeholder="e.g., Run 5km, Pay Internet Bill..." autocomplete="off">
                     </div>
-                    <button type="submit" id="saveTaskBtn" class="btn-primary">Save Task</button>
+                    
+                    <!-- NEW: Task Type Selector -->
+                    <div class="input-group" style="margin-top: 16px;">
+                        <label for="taskType">Task Type</label>
+                        <select id="taskType" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--surface-2); color: var(--text-primary); outline: none; font-family: inherit; font-size: 14px;">
+                            <option value="habit">🔁 Daily Habit (Repeatable)</option>
+                            <option value="one-time">📌 One-Time Task (Today only)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" id="saveTaskBtn" class="btn-primary" style="margin-top: 24px;">Save Task</button>
                 </form>
             </div>
         </div>
 
-        <!-- Friends & Leaderboard Modal -->
+        <!-- Friends & Leaderboard Modal (Untouched, perfectly working) -->
         <div id="friendsModal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
@@ -76,7 +91,6 @@
                     <button id="closeFriendsBtn" class="close-btn">&times;</button>
                 </div>
                 
-                <!-- Search for Friends -->
                 <div class="input-group" style="margin-bottom: 24px;">
                     <label for="friendSearchInput">Add a Friend</label>
                     <div style="display: flex; gap: 8px;">
@@ -86,13 +100,11 @@
                     <div id="friendSearchResult" style="margin-top: 12px; font-size: 14px;"></div>
                 </div>
 
-                <!-- NEW: Pending Requests -->
                 <div id="pendingRequestsContainer" class="hidden" style="margin-bottom: 24px;">
                     <h4 style="color: var(--primary-color);">Pending Requests</h4>
                     <div id="pendingRequestsList" class="task-list" style="margin-top: 12px;"></div>
                 </div>
 
-                <!-- The Leaderboard -->
                 <h4>Top Streaks</h4>
                 <div id="leaderboardList" class="task-list" style="margin-top: 12px;">
                     <p class="empty-state">No friends yet. Search a username above to start competing!</p>
