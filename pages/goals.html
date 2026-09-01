@@ -1,4 +1,3 @@
-<!-- pages/goals.html -->
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
@@ -17,24 +16,25 @@
                 <p class="date-text">Long-Term Focus</p>
                 <h1>Vision Board</h1>
             </div>
-            <a href="settings.html" class="avatar-circle">⚙️</a>
         </header>
 
-        <!-- Add Goal Card -->
-        <div class="hero-card" style="flex-direction: column; align-items: flex-start; gap: 16px;">
-            <h2>What is your ultimate target?</h2>
+        <!-- Clean Add Goal Section -->
+        <div style="background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+            <h2 style="font-size: 18px; margin-bottom: 8px; color: var(--text-primary);">Define Your Target</h2>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">The AI will break this down into actionable daily tasks for you.</p>
+            
             <form id="goalForm" style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
-                <textarea id="goalInput" required rows="3" placeholder="e.g., Secure a top rank in the JKBOPEE entrance exam, or build a functional internal SOC lab..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--surface-color); color: var(--text-primary); font-family: inherit; resize: none;"></textarea>
-                <button type="submit" id="saveGoalBtn" class="btn-primary">Lock in Goal 🎯</button>
+                <textarea id="goalInput" required rows="3" placeholder="e.g., Get an entry-level job in cybersecurity by building a SOC lab..." style="width: 100%; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--surface-2); color: var(--text-primary); font-family: inherit; resize: none; outline: none;"></textarea>
+                <button type="submit" id="saveGoalBtn" class="btn-primary" style="margin-top: 8px;">Lock in Goal 🎯</button>
             </form>
         </div>
 
         <!-- Saved Goals List -->
         <div class="timeline-section" style="margin-bottom: 80px;">
-            <h3>Your Active Targets</h3>
+            <h3 style="font-size: 16px; color: var(--text-secondary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Active Targets</h3>
             <div id="goalList" class="task-list">
                 <!-- Goals will inject here -->
-                <p class="empty-state">No big targets set yet. Define your vision above!</p>
+                <p class="empty-state">No targets set yet. Define your vision above!</p>
             </div>
         </div>
 
@@ -42,7 +42,7 @@
         <nav class="bottom-nav">
             <a href="dashboard.html" class="nav-item">🏠</a>
             <a href="goals.html" class="nav-item active">🎯</a>
-            <a href="dashboard.html" class="fab-button">+</a>
+            <a href="dashboard.html" class="fab-button" style="text-decoration: none;">+</a>
             <a href="chat.html" class="nav-item">💬</a>
             <a href="achievements.html" class="nav-item">🏆</a>
         </nav>
