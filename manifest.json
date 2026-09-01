@@ -1,0 +1,16 @@
+{
+  "name": "HabitMentor",
+  "short_name": "HabitMentor",
+  "description": "A professional habit tracker and productivity app.",
+  "start_url": "/pages/dashboard.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/512/10b981/ffffff?text=HM",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
