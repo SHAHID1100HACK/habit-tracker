@@ -169,7 +169,7 @@ window.sendFriendRequest = async (receiverId) => {
     }
 };
 
-// 3. Accept/Decline Handlers
+// 3. Accept/Decline/Remove Handlers
 window.acceptRequest = async (friendshipId) => {
     try {
         await supabaseClient.from('friendships').update({ status: 'accepted' }).eq('id', friendshipId);
@@ -184,11 +184,19 @@ window.declineRequest = async (friendshipId) => {
     } catch (err) { console.error(err); }
 };
 
+// NEW: Remove an already accepted friend
+window.removeFriend = async (friendshipId) => {
+    if (!confirm("Remove this friend from your leaderboard?")) return;
+    try {
+        await supabaseClient.from('friendships').delete().eq('id', friendshipId);
+        await loadLeaderboard();
+    } catch (err) { console.error(err); }
+};
+
 // 4. Load Both Leaderboard and Inbox
 async function loadLeaderboard() {
     if(!leaderboardList) return;
     try {
-        // Fetch ALL friendships involving current user
         const { data: friendships } = await supabaseClient
             .from('friendships')
             .select('*')
@@ -196,14 +204,15 @@ async function loadLeaderboard() {
 
         let friendIds = [currentUser.id];
         let pendingRequests = [];
+        let friendshipMap = {}; // Maps a friend's user ID to their friendship row ID
 
         if (friendships) {
             friendships.forEach(f => {
                 if (f.status === 'accepted') {
-                    // Two-way sync: push whichever ID is not yours
-                    friendIds.push(f.requester_id === currentUser.id ? f.receiver_id : f.requester_id);
+                    const friendId = f.requester_id === currentUser.id ? f.receiver_id : f.requester_id;
+                    friendIds.push(friendId);
+                    friendshipMap[friendId] = f.id; // Save the row ID so we can delete it later
                 } else if (f.status === 'pending' && f.receiver_id === currentUser.id) {
-                    // Someone sent YOU a request
                     pendingRequests.push(f);
                 }
             });
@@ -214,7 +223,6 @@ async function loadLeaderboard() {
             pendingRequestsContainer.classList.remove('hidden');
             pendingRequestsList.innerHTML = '';
             
-            // Get usernames of the requesters
             const requesterIds = pendingRequests.map(r => r.requester_id);
             const { data: requesterProfiles } = await supabaseClient.from('profiles').select('id, username').in('id', requesterIds);
 
@@ -246,9 +254,21 @@ async function loadLeaderboard() {
             const card = document.createElement('div');
             card.className = 'task-card';
             if (isMe) card.style.borderLeft = '4px solid var(--primary-color)';
-            card.innerHTML = `<div style="display: flex; justify-content: space-between; width: 100%;">
+            
+            // NEW: Add a remove button (✖) for everyone except yourself
+            let removeBtnHTML = '';
+            if (!isMe) {
+                const fId = friendshipMap[p.id];
+                removeBtnHTML = `<button onclick="removeFriend('${fId}')" style="background: none; border: none; color: var(--danger); font-size: 16px; margin-left: 12px; cursor: pointer;" title="Remove Friend">✖</button>`;
+            }
+
+            card.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <span style="font-weight: bold;">#${index + 1} <span style="font-weight: normal; margin-left: 8px;">${p.username}</span></span>
-                <span>🔥 ${p.streak_current} | Lvl ${p.level}</span></div>`;
+                <div style="display: flex; align-items: center;">
+                    <span>🔥 ${p.streak_current} | Lvl ${p.level}</span>
+                    ${removeBtnHTML}
+                </div>
+            </div>`;
             leaderboardList.appendChild(card);
         });
     } catch (err) { console.error(err); }
