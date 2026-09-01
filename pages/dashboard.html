@@ -14,15 +14,12 @@
         <!-- Header -->
         <header class="dash-header">
             <div>
-                <!-- NATIVE DATE PICKER FIX -->
                 <div style="margin-bottom: 8px;">
                     <input type="date" id="datePicker" style="background: var(--surface-2); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 12px; border-radius: 8px; font-family: inherit; font-weight: bold; cursor: pointer; outline: none;">
                 </div>
-                
                 <h1 id="greeting">Good day!</h1>
             </div>
             
-            <!-- Header Actions -->
             <div class="header-actions">
                 <button id="friendsBtn" class="icon-btn">👥</button>
                 <a href="settings.html" class="avatar-circle">
@@ -36,7 +33,6 @@
             <div class="hero-info">
                 <h2>My Plan<br>For Today</h2>
                 <p id="taskProgressText">0 of 0 Completed</p>
-                
                 <div class="level-badge">
                     <span>Level <span id="userLevel">1</span></span>
                     <span>🔥 <span id="userStreak">0</span> Day Streak</span>
@@ -51,7 +47,6 @@
         <div class="timeline-section">
             <h3>Today's Activity</h3>
             <div id="taskList" class="task-list">
-                <!-- Tasks will be injected here via JS -->
                 <p class="empty-state">No tasks scheduled for today. Add one below!</p>
             </div>
         </div>
@@ -89,6 +84,12 @@
                         <button id="searchFriendBtn" class="btn-primary" style="width: auto; margin-top: 0;">Search</button>
                     </div>
                     <div id="friendSearchResult" style="margin-top: 12px; font-size: 14px;"></div>
+                </div>
+
+                <!-- NEW: Pending Requests -->
+                <div id="pendingRequestsContainer" class="hidden" style="margin-bottom: 24px;">
+                    <h4 style="color: var(--primary-color);">Pending Requests</h4>
+                    <div id="pendingRequestsList" class="task-list" style="margin-top: 12px;"></div>
                 </div>
 
                 <!-- The Leaderboard -->

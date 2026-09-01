@@ -9,13 +9,16 @@ const progressPercent = document.getElementById('progressPercent');
 const friendSearchInput = document.getElementById('friendSearchInput');
 const friendSearchResult = document.getElementById('friendSearchResult');
 const leaderboardList = document.getElementById('leaderboardList');
+const pendingRequestsContainer = document.getElementById('pendingRequestsContainer');
+const pendingRequestsList = document.getElementById('pendingRequestsList');
 const searchFriendBtn = document.getElementById('searchFriendBtn');
 const friendsBtn = document.getElementById('friendsBtn');
 const friendsModal = document.getElementById('friendsModal');
+const userInitialEl = document.getElementById('userInitial');
 
 let currentUser = null;
 
-// Initialize Date Picker to Today
+// Initialize Date Picker
 const today = new Date();
 const offset = today.getTimezoneOffset() * 60000;
 const localISOTime = (new Date(today - offset)).toISOString().split('T')[0];
@@ -27,10 +30,9 @@ if(datePicker) {
     });
 }
 
-function getViewingDateString() {
-    return datePicker.value;
-}
+function getViewingDateString() { return datePicker.value; }
 
+// Auth Check
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
     if (!session || !session.user) {
         window.location.href = '../index.html';
@@ -46,9 +48,14 @@ async function loadUserProfile() {
         const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
         if (error) throw error;
         if (greetingEl) greetingEl.textContent = `Good day, ${data.username}!`;
+        if (userInitialEl) userInitialEl.textContent = data.username.charAt(0).toUpperCase();
+        
+        document.getElementById('userLevel').textContent = data.level || 1;
+        document.getElementById('userStreak').textContent = data.streak_current || 0;
     } catch (err) { console.error(err); }
 }
 
+// Tasks Logic
 async function loadTasksForDate() {
     try {
         const { data: tasks, error } = await supabaseClient.from('tasks').select('*').eq('user_id', currentUser.id).eq('scheduled_date', getViewingDateString()).order('created_at', { ascending: true });
@@ -60,57 +67,46 @@ async function loadTasksForDate() {
 function renderTasks(tasks) {
     if(!taskListEl) return;
     taskListEl.innerHTML = ''; 
-
     if (!tasks || tasks.length === 0) {
         taskListEl.innerHTML = '<p class="empty-state">No tasks scheduled for this day.</p>';
         if(taskProgressText) taskProgressText.textContent = "0 of 0 Completed";
         if(progressPercent) progressPercent.textContent = "0%";
         return;
     }
-
     let completedCount = 0;
     tasks.forEach(task => {
         if (task.is_completed) completedCount++;
-        
         const card = document.createElement('div');
         card.className = `task-card ${task.is_completed ? 'completed' : ''}`;
         card.innerHTML = `<div class="task-checkbox">${task.is_completed ? '✓' : ''}</div><span class="task-title">${task.title}</span>`;
-        
-        // ALLOW UNCHECKING NOW
         card.onclick = () => toggleTaskComplete(task.id, task.is_completed, card);
         card.style.cursor = 'pointer';
-        
         taskListEl.appendChild(card);
     });
-
     if(taskProgressText) taskProgressText.textContent = `${completedCount} of ${tasks.length} Completed`;
     if(progressPercent) progressPercent.textContent = `${Math.round((completedCount / tasks.length) * 100)}%`;
 }
 
-// THE UNCHECK FIX
 async function toggleTaskComplete(taskId, currentlyCompleted, cardElement) {
     cardElement.style.pointerEvents = 'none';
     cardElement.style.opacity = '0.5';
     try {
         if (currentlyCompleted) {
-            // Uncheck it directly
             const { error } = await supabaseClient.from('tasks').update({ is_completed: false }).eq('id', taskId);
             if (error) throw error;
         } else {
-            // Check it & award XP
             const { error } = await supabaseClient.rpc('complete_task_and_award_xp', { p_task_id: taskId, p_user_id: currentUser.id });
             if (error) throw error;
         }
         await loadUserProfile();
         await loadTasksForDate();
     } catch (err) {
-        console.error("Failed to toggle:", err);
+        console.error(err);
         cardElement.style.pointerEvents = 'auto';
         cardElement.style.opacity = '1';
     }
 }
 
-// Add task functionality
 document.getElementById('fabAdd')?.addEventListener('click', () => taskModal.classList.remove('hidden'));
 document.getElementById('closeModalBtn')?.addEventListener('click', () => taskModal.classList.add('hidden'));
 document.getElementById('addTaskForm')?.addEventListener('submit', async (e) => {
@@ -126,49 +122,122 @@ document.getElementById('addTaskForm')?.addEventListener('submit', async (e) => 
     } catch (err) { console.error(err); }
 });
 
-// FRIEND SEARCH FIX (Case Insensitive)
-if(friendsBtn) friendsBtn.addEventListener('click', () => { friendsModal.classList.remove('hidden'); loadLeaderboard(); });
-if(document.getElementById('closeFriendsBtn')) document.getElementById('closeFriendsBtn').addEventListener('click', () => { friendsModal.classList.add('hidden'); });
+// FRIEND SYSTEM LOGIC
+if(friendsBtn) friendsBtn.addEventListener('click', () => { 
+    friendsModal.classList.remove('hidden'); 
+    loadLeaderboard(); 
+});
+if(document.getElementById('closeFriendsBtn')) document.getElementById('closeFriendsBtn').addEventListener('click', () => { 
+    friendsModal.classList.add('hidden'); 
+    friendSearchResult.innerHTML = '';
+});
 
+// 1. Search
 if(searchFriendBtn) {
     searchFriendBtn.addEventListener('click', async () => {
         const query = friendSearchInput.value.trim();
         if (!query) return;
         searchFriendBtn.textContent = '...';
         try {
-            // Changed from .eq to .ilike so "Shahid.t" works even if typed as "shahid.t"
             const { data, error } = await supabaseClient.from('profiles').select('id, username').ilike('username', query);
             if (error || !data || data.length === 0) throw new Error('User not found');
-            
             const friend = data[0];
             if (friend.id === currentUser.id) throw new Error('Cannot add yourself');
             
             friendSearchResult.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; background: var(--surface-2); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
                 <strong>${friend.username}</strong><button onclick="sendFriendRequest('${friend.id}')" class="btn-primary" style="margin: 0; padding: 6px 14px; font-size: 12px; width: auto;">Add</button></div>`;
         } catch (err) {
-            friendSearchResult.innerHTML = `<p class="error-message">User not found.</p>`;
+            friendSearchResult.innerHTML = `<p class="error-message">${err.message}</p>`;
         } finally {
             searchFriendBtn.textContent = 'Search';
         }
     });
 }
 
+// 2. Send Request
 window.sendFriendRequest = async (receiverId) => {
     try {
-        const { error } = await supabaseClient.from('friendships').insert([{ requester_id: currentUser.id, receiver_id: receiverId }]);
+        const { error } = await supabaseClient.from('friendships').insert([{ 
+            requester_id: currentUser.id, 
+            receiver_id: receiverId,
+            status: 'pending'
+        }]);
         if (error) throw error;
-        friendSearchResult.innerHTML = `<p style="color: var(--success); font-weight: bold;">Added to leaderboard!</p>`;
-        await loadLeaderboard();
-    } catch (err) { friendSearchResult.innerHTML = `<p class="error-message">Already on leaderboard!</p>`; }
+        friendSearchResult.innerHTML = `<p style="color: var(--success); font-weight: bold;">Request sent!</p>`;
+    } catch (err) { 
+        friendSearchResult.innerHTML = `<p class="error-message">Request already pending or accepted.</p>`; 
+    }
 };
 
+// 3. Accept/Decline Handlers
+window.acceptRequest = async (friendshipId) => {
+    try {
+        await supabaseClient.from('friendships').update({ status: 'accepted' }).eq('id', friendshipId);
+        await loadLeaderboard();
+    } catch (err) { console.error(err); }
+};
+
+window.declineRequest = async (friendshipId) => {
+    try {
+        await supabaseClient.from('friendships').delete().eq('id', friendshipId);
+        await loadLeaderboard();
+    } catch (err) { console.error(err); }
+};
+
+// 4. Load Both Leaderboard and Inbox
 async function loadLeaderboard() {
     if(!leaderboardList) return;
     try {
-        const { data: friends } = await supabaseClient.from('friendships').select('receiver_id').eq('requester_id', currentUser.id);
-        const friendIds = friends ? friends.map(f => f.receiver_id) : [];
-        friendIds.push(currentUser.id);
+        // Fetch ALL friendships involving current user
+        const { data: friendships } = await supabaseClient
+            .from('friendships')
+            .select('*')
+            .or(`requester_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`);
 
+        let friendIds = [currentUser.id];
+        let pendingRequests = [];
+
+        if (friendships) {
+            friendships.forEach(f => {
+                if (f.status === 'accepted') {
+                    // Two-way sync: push whichever ID is not yours
+                    friendIds.push(f.requester_id === currentUser.id ? f.receiver_id : f.requester_id);
+                } else if (f.status === 'pending' && f.receiver_id === currentUser.id) {
+                    // Someone sent YOU a request
+                    pendingRequests.push(f);
+                }
+            });
+        }
+
+        // --- RENDER PENDING REQUESTS ---
+        if (pendingRequests.length > 0) {
+            pendingRequestsContainer.classList.remove('hidden');
+            pendingRequestsList.innerHTML = '';
+            
+            // Get usernames of the requesters
+            const requesterIds = pendingRequests.map(r => r.requester_id);
+            const { data: requesterProfiles } = await supabaseClient.from('profiles').select('id, username').in('id', requesterIds);
+
+            pendingRequests.forEach(req => {
+                const profile = requesterProfiles?.find(p => p.id === req.requester_id);
+                if(!profile) return;
+
+                const card = document.createElement('div');
+                card.className = 'task-card';
+                card.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span style="font-weight: bold;">${profile.username}</span>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="acceptRequest('${req.id}')" class="btn-primary" style="padding: 4px 12px; font-size: 12px; width: auto; margin:0;">Accept</button>
+                        <button onclick="declineRequest('${req.id}')" class="btn-secondary" style="padding: 4px 12px; font-size: 12px; width: auto; margin:0; border: 1px solid var(--danger); color: var(--danger);">Decline</button>
+                    </div>
+                </div>`;
+                pendingRequestsList.appendChild(card);
+            });
+        } else {
+            pendingRequestsContainer.classList.add('hidden');
+        }
+
+        // --- RENDER LEADERBOARD ---
         const { data: profiles } = await supabaseClient.from('profiles').select('username, level, streak_current, id').in('id', friendIds).order('streak_current', { ascending: false });
         
         leaderboardList.innerHTML = '';
