@@ -103,7 +103,7 @@ function renderTasks(tasks) {
     }
 
     if (habitCount === 0) habitListEl.innerHTML = '<p class="empty-state">No habits scheduled.</p>';
-    if (oneTimeCount === 0) oneTimeListEl.innerHTML = '<p class="empty-state">No action items scheduled for today.</p>';
+    if (oneTimeCount === 0) oneTimeListEl.innerHTML = '<p class="empty-state">No tasks scheduled for today.</p>';
 
     const totalTasks = habitCount + oneTimeCount;
     if(taskProgressText) taskProgressText.textContent = `${completedCount} of ${totalTasks} Completed`;
