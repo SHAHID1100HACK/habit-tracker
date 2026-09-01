@@ -3,55 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HabitMentor | Turn Goals into Daily Actions</title>
+    <title>Login | HabitMentor</title>
+    
+    <!-- PWA Manifest and Service Worker for Android APK Build -->
+    <link rel="manifest" href="manifest.json">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js');
+            });
+        }
+    </script>
+
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/components.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
-    <div class="container auth-container">
-        <header class="auth-header">
-            <h1>HabitMentor</h1>
-            <p>Your AI-powered pocket mentor.</p>
-        </header>
+<body style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--bg-color); padding: 20px;">
+    
+    <div class="hero-card" style="width: 100%; max-width: 400px; flex-direction: column; gap: 24px; padding: 32px; background: var(--surface-color); border: 1px solid var(--border-color); margin: 0 auto;">
+        
+        <div style="text-align: center;">
+            <h1 style="margin-bottom: 8px;">HabitMentor</h1>
+            <p style="color: var(--text-secondary); font-size: 14px;">Sign in to access your dashboard</p>
+        </div>
 
-        <div class="auth-card">
-            <div class="theme-toggle-wrapper">
-                <button id="themeToggleBtn" onclick="toggleTheme()" class="btn-secondary">🌓 Toggle Theme</button>
+        <form id="authForm" style="display: flex; flex-direction: column; gap: 16px; width: 100%;">
+            <div class="input-group">
+                <label for="emailInput">Email</label>
+                <input type="email" id="emailInput" required placeholder="Enter your email">
+            </div>
+            
+            <div class="input-group">
+                <label for="passwordInput">Password</label>
+                <input type="password" id="passwordInput" required placeholder="Enter your password">
             </div>
 
-            <h2 id="formTitle">Sign Up</h2>
-            
-            <form id="authForm">
-                <!-- New Email Field -->
-                <div class="input-group" id="emailGroup">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" placeholder="you@example.com" required>
-                </div>
-                
-                <div class="input-group" id="usernameGroup">
-                    <label for="username" id="userLabel">Username</label>
-                    <input type="text" id="username" placeholder="e.g. Shahid_Hunter" required>
-                </div>
-                
-                <div class="input-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" required placeholder="Min. 8 characters">
-                </div>
-                
-                <div id="authError" class="error-message hidden"></div>
-                <button type="submit" id="submitBtn" class="btn-primary">Create Account</button>
-            </form>
+            <div class="input-group" id="usernameGroup" style="display: none;">
+                <label for="usernameInput">Username</label>
+                <input type="text" id="usernameInput" placeholder="Choose a username">
+            </div>
 
-            <p class="auth-switch">
-                <span id="switchText">Already have an account?</span> 
-                <a href="#" id="switchMode">Log In</a>
-            </p>
-        </div>
+            <p id="authError" style="color: var(--danger); font-size: 13px; margin: 0; text-align: center;"></p>
+
+            <button type="submit" id="signInBtn" class="btn-primary" style="width: 100%;">Sign In</button>
+            <button type="button" id="toggleSignUpBtn" class="btn-secondary" style="width: 100%;">Need an account? Sign Up</button>
+        </form>
     </div>
 
     <script src="js/config.js"></script>
-    <script src="js/ui.js"></script>
     <script src="js/auth.js"></script>
 </body>
 </html>
