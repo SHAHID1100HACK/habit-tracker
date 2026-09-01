@@ -44,12 +44,24 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     await loadTasksForDate();
 });
 
+// LOAD USER PROFILE (Includes new Profile Picture logic)
 async function loadUserProfile() {
     try {
         const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
         if (error) throw error;
+        
         if (greetingEl) greetingEl.textContent = `Good day, ${data.username}!`;
-        if (userInitialEl) userInitialEl.textContent = data.username.charAt(0).toUpperCase();
+        
+        // Show PFP or fallback to Initial
+        if (userInitialEl) {
+            if (data.avatar_url) {
+                userInitialEl.innerHTML = `<img src="${data.avatar_url}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+                userInitialEl.style.overflow = 'hidden';
+            } else {
+                userInitialEl.textContent = data.username.charAt(0).toUpperCase();
+                userInitialEl.innerHTML = data.username.charAt(0).toUpperCase();
+            }
+        }
         
         document.getElementById('userLevel').textContent = data.level || 1;
         document.getElementById('userStreak').textContent = data.streak_current || 0;

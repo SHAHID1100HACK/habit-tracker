@@ -22,12 +22,22 @@
         <!-- Edit Profile Card -->
         <div class="hero-card" style="flex-direction: column; align-items: flex-start; gap: 20px; background: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-primary); box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
             <h2 style="color: var(--text-primary); font-size: 18px; margin-bottom: 0;">Profile Information</h2>
+            
+            <!-- NEW: PFP Upload Section -->
+            <div style="display: flex; align-items: center; gap: 16px; width: 100%;">
+                <div id="avatarPreview" class="avatar-circle" style="width: 64px; height: 64px; font-size: 24px; overflow: hidden; display: flex; justify-content: center; align-items: center;">?</div>
+                <div style="flex-grow: 1;">
+                    <label for="avatarUpload" class="btn-secondary" style="display: inline-block; cursor: pointer; padding: 6px 12px; font-size: 12px; width: auto; margin-bottom: 4px;">Choose Picture</label>
+                    <input type="file" id="avatarUpload" accept="image/*" style="display: none;">
+                    <p style="font-size: 11px; color: var(--text-secondary); margin: 0;">JPEG or PNG</p>
+                </div>
+            </div>
+
             <p id="uploadStatus" style="font-size: 13px; margin: 0;"></p>
             
             <div class="input-group" style="width: 100%;">
                 <label for="usernameInput" style="color: var(--text-secondary);">Display Name</label>
                 <input type="text" id="usernameInput" placeholder="Loading...">
-                <p style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Username can be changed once every 30 days.</p>
             </div>
             <button id="saveProfileBtn" class="btn-primary" style="width: 100%;">Save Changes</button>
         </div>
