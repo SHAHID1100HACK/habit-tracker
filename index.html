@@ -23,8 +23,14 @@
             <h2 id="formTitle">Sign Up</h2>
             
             <form id="authForm">
+                <!-- New Email Field -->
+                <div class="input-group" id="emailGroup">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="you@example.com" required>
+                </div>
+                
                 <div class="input-group" id="usernameGroup">
-                    <label for="username">Username</label>
+                    <label for="username" id="userLabel">Username</label>
                     <input type="text" id="username" placeholder="e.g. Shahid_Hunter" required>
                 </div>
                 
@@ -32,9 +38,8 @@
                     <label for="password">Password</label>
                     <input type="password" id="password" required placeholder="Min. 8 characters">
                 </div>
-
+                
                 <div id="authError" class="error-message hidden"></div>
-
                 <button type="submit" id="submitBtn" class="btn-primary">Create Account</button>
             </form>
 
