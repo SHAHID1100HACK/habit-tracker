@@ -43,16 +43,16 @@
             </div>
         </div>
 
-        <!-- NEW: Split Timeline Section -->
+        <!-- Split Timeline Section -->
         <div class="timeline-section" style="margin-bottom: 80px;">
             <h3 style="font-size: 16px; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">🔁 Daily Habits</h3>
             <div id="habitList" class="task-list" style="margin-bottom: 32px;">
                 <p class="empty-state">No habits scheduled. Add one below!</p>
             </div>
 
-            <h3 style="font-size: 16px; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">📌 One-Time Tasks</h3>
+            <h3 style="font-size: 16px; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">📌 Action Items</h3>
             <div id="oneTimeList" class="task-list">
-                <p class="empty-state">No one-time tasks for today.</p>
+                <p class="empty-state">No action items scheduled for today.</p>
             </div>
         </div>
 
@@ -69,12 +69,12 @@
                         <input type="text" id="taskTitle" required placeholder="e.g., Run 5km, Pay Internet Bill..." autocomplete="off">
                     </div>
                     
-                    <!-- NEW: Task Type Selector -->
+                    <!-- Task Type Selector -->
                     <div class="input-group" style="margin-top: 16px;">
                         <label for="taskType">Task Type</label>
                         <select id="taskType" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--surface-2); color: var(--text-primary); outline: none; font-family: inherit; font-size: 14px;">
                             <option value="habit">🔁 Daily Habit (Repeatable)</option>
-                            <option value="one-time">📌 One-Time Task (Today only)</option>
+                            <option value="one-time">📌 Action Item (Today only)</option>
                         </select>
                     </div>
 
@@ -83,7 +83,7 @@
             </div>
         </div>
 
-        <!-- Friends & Leaderboard Modal (Untouched, perfectly working) -->
+        <!-- Friends & Leaderboard Modal -->
         <div id="friendsModal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
